@@ -23,9 +23,9 @@ class VoteType(Enum):
 
 
 class User:
-    def __init__(self) -> None:
+    def __init__(self, profile) -> None:
         self.reputation_score = 0
-        self.profile = None
+        self.profile = profile
 
 class Comment:
     def __init__(self, creator, content) -> None:
@@ -45,19 +45,23 @@ class Tag:
 
 class Votable:
     def __init__(self) -> None:
-        self.creator: User = None
         self.votes: list[Vote] = []
 
     def vote(self, user: User, type: VoteType) -> Vote:
         new_vote = Vote(user, type)
         self.votes.append(new_vote)
-    
-        if type == VoteType.UPVOTE:
-            self.creator.reputation_score += 1
-        elif type == VoteType.DOWNVOTE:
-            self.creator.reputation_score -= 1
-        else:
-            raise ValueError("Invalid vote type")
+
+        creator = self.get_creator(self)
+        if creator:
+            if type == VoteType.UPVOTE:
+                creator.reputation_score += 1
+            elif type == VoteType.DOWNVOTE:
+                creator.reputation_score -= 1
+            else:
+                raise ValueError("Invalid vote type")
+        
+    def get_creator(self):
+        pass
         
 
 class Commentable:
@@ -70,26 +74,26 @@ class Commentable:
         return new_comment
 
 
-
 class Question(Votable, Commentable):
     def __init__(self, creator, content) -> None:
+        super().__init__()
         self.creator = creator 
         self.content = content
-        self.votes: list[Vote] = []
-        self.comments: list[Comment] = []
         self.tags: list[Tag] = []
         self.answers: list[Answer] = []
 
-
+    def get_creator(self):
+        return self.creator
 
 class Answer(Votable, Commentable):
     def __init__(self, creator, question, content) -> None:
+        super().__init__()
         self.creator: User = creator
         self.question: Question = question 
-        self.votes : list[Vote] = []
-        self.comments: list[Comment] = []
         self.content = content
-       
+
+    def get_creator(self):
+        return self.creator
 
 class StackOverflow:
     def __init__(self) -> None:
@@ -97,6 +101,11 @@ class StackOverflow:
         self.users: list[User] = []
         self.answers: list[Answer] = []
         self.tags: list[Tag] = []
+
+    def create_account(self, profile):
+        user = User(profile)
+        self.users.append(user)
+        return user
 
     def post_question(self, content: str, user: User, tags: Optional[list[str]] = None) -> Question:
         q = Question(user, content)
@@ -122,8 +131,7 @@ class StackOverflow:
     def comment_question(self, question: Question, user: User, content: str) -> None:
         for q in self.questions:
             if q == question:
-                answer = q.comment(user, content)
-                self.answers.append(answer)
+                q.comment(user, content)
                 return
         raise ValueError("Question not found")
 
@@ -131,6 +139,7 @@ class StackOverflow:
         for a in self.answers:
             if a == answer:
                 a.comment(user, content)
+                return
         raise ValueError("Answer not found")
 
 
@@ -154,18 +163,19 @@ class StackOverflow:
         results = []
         for q in self.questions:
 
-            if search_param == q.content:
+            if search_param in q.content:
                 results.append(q)
             else:
                 for t in q.tags:
-                    if t.content == search_param:
+                    if t.name in search_param:
                         results.append(q)
 
         return results
             
 
-
-
-
 if __name__ == "__main__":
-    pass
+    system = StackOverflow()
+    user1 = system.create_account('user1')
+    system.post_question(user1, "What's the best resturant in Seattle")
+    user2 = system.create_account('user2')
+    system.answer_question(user2, "Pho House")
