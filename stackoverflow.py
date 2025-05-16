@@ -107,7 +107,7 @@ class StackOverflow:
         self.users.append(user)
         return user
 
-    def post_question(self, content: str, user: User, tags: Optional[list[str]] = None) -> Question:
+    def post_question(self, content: str, user: User, tags: Optional[list[str]] = []) -> Question:
         q = Question(user, content)
         self.questions.append(q)
 
@@ -118,14 +118,16 @@ class StackOverflow:
                     continue
             q.tags.append(Tag(t))
         
+        return q
+        
 
-    def answer_question(self, question: Question, user: User, content: str) -> None:
+    def answer_question(self, question: Question, user: User, content: str) -> Answer:
         for q in self.questions:
             if q == question:
                 answer = Answer(user, question, content)
                 q.answers.append(answer)
                 self.answers.append(answer)
-                return
+                return answer
         raise ValueError("Question not found")
 
     def comment_question(self, question: Question, user: User, content: str) -> None:
@@ -162,7 +164,6 @@ class StackOverflow:
     def search_question(self, search_param: str) -> list[Question]:
         results = []
         for q in self.questions:
-
             if search_param in q.content:
                 results.append(q)
             else:
@@ -176,6 +177,6 @@ class StackOverflow:
 if __name__ == "__main__":
     system = StackOverflow()
     user1 = system.create_account('user1')
-    system.post_question(user1, "What's the best resturant in Seattle")
+    question = system.post_question(user1, "What's the best resturant in Seattle")
     user2 = system.create_account('user2')
-    system.answer_question(user2, "Pho House")
+    system.answer_question(question, user2, "Pho House")
