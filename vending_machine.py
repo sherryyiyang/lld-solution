@@ -71,6 +71,7 @@ class VendingMachine:
             if total_amount < self.products[product_name].price:
                 raise Exception("Insufficent balance!")
             
+            self.collect_money(money)
             
             product = self.products[product_name]
             product.quantity -= 1
